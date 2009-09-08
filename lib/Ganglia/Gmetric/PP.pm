@@ -4,7 +4,7 @@ Ganglia::Gmetric::PP - Pure Perl emitter of Ganglia monitoring packets
 
 =head1 SYNOPSIS
 
-    my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => 1950);
+    my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => 8649);
     $gmetric->gsend($type, $id, $value, $unit, $slope, $tmax, $dmax);
 
 =head1 DESCRIPTION
@@ -22,7 +22,7 @@ our $VERSION = 0.01;
 use strict;
 use warnings;
 
-use Ganglia::Gmetric::PP::XDR ':all';
+use Ganglia::Gmetric::PP::XDR ':encode';
 use IO::Socket::INET;
 
 use base 'Exporter';
@@ -49,7 +49,7 @@ our @EXPORT_OK = qw(
 =item * $gmetric = Ganglia::Gmetric::PP->new(host => $host, port => $port)
 
 Constructs a new object which talks to the specified host and port. If omitted,
-they default to localhost and 1950, respectively.
+they default to localhost and 8649, respectively.
 
 =cut
 
@@ -57,7 +57,7 @@ sub new {
     my $proto = shift;
     my $class = ref($proto) || $proto;
 
-    my %p = (host => 'localhost', port => 1950, @_);
+    my %p = (host => 'localhost', port => 8649, @_);
 
     my $self = IO::Socket::INET->new(
         PeerAddr => $p{host},
