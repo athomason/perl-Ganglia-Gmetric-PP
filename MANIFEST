@@ -4,4 +4,3 @@ MANIFEST
 README
 t/Ganglia-Gmetric-PP.t
 lib/Ganglia/Gmetric/PP.pm
-lib/Ganglia/Gmetric/PP/XDR.pm

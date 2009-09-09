@@ -1,18 +1,82 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl Ganglia-Gmetric-PP.t'
+use strict;
+use warnings;
 
-#########################
+use Test::More tests => 20;
+BEGIN { use_ok('Ganglia::Gmetric::PP', ':all') };
 
-# change 'tests => 1' to 'tests => last_test_to_print';
+my $test_port = 8650;
 
-use Test::More tests => 1;
-BEGIN { use_ok('Ganglia::Gmetric::PP') };
-
-#########################
-
-# Insert your test code below, the Test::More module is use()ed here so read
-# its man page ( perldoc Test::More ) for help writing this test script.
-
-my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => 1111);
+my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => $test_port);
 ok($gmetric, 'new');
-$gmetric->gsend($type, $id, $value, $unit, $slope, $tmax, $dmax);
+
+# gmetric cmdline tool reference output
+my %reference = (
+    "int8" => [
+        "\0\0\0\0\0\0\0\4int8\0\0\0\bint8test\0\0\0\00218\0\0\0\0\0\6things\0\0\0\0\0\3\0\0\0<\0\0\0\0",
+        [ "int8", "int8test", 18 ]
+    ],
+    "int32" => [
+        "\0\0\0\0\0\0\0\5int32\0\0\0\0\0\0\tint32test\0\0\0\0\0\0\0010\0\0\0\0\0\0\6things\0\0\0\0\0\3\0\0\0<\0\0\0\0",
+        [ "int32", "int32test", 0 ]
+    ],
+    "string" => [
+        "\0\0\0\0\0\0\0\6string\0\0\0\0\0\nstringtest\0\0\0\0\0\02036.1673468564735\0\0\0\6things\0\0\0\0\0\3\0\0\0<\0\0\0\0",
+        [ "string", "stringtest", "36.1673468564735" ]
+    ],
+    "double" => [
+        "\0\0\0\0\0\0\0\6double\0\0\0\0\0\ndoubletest\0\0\0\0\0\01728.799646370172\0\0\0\0\6things\0\0\0\0\0\3\0\0\0<\0\0\0\0",
+        [ "double", "doubletest", "28.799646370172" ]
+    ],
+    "uint32" => [
+        "\0\0\0\0\0\0\0\6uint32\0\0\0\0\0\nuint32test\0\0\0\0\0\00257\0\0\0\0\0\6things\0\0\0\0\0\3\0\0\0<\0\0\0\0",
+        [ "uint32", "uint32test", 57 ]
+    ],
+    "float" => [
+        "\0\0\0\0\0\0\0\5float\0\0\0\0\0\0\tfloattest\0\0\0\0\0\0\02098.1403087306795\0\0\0\6things\0\0\0\0\0\3\0\0\0<\0\0\0\0",
+        [ "float", "floattest", "98.1403087306795" ]
+    ],
+    "int16" => [
+        "\0\0\0\0\0\0\0\5int16\0\0\0\0\0\0\tint16test\0\0\0\0\0\0\00285\0\0\0\0\0\6things\0\0\0\0\0\3\0\0\0<\0\0\0\0",
+        [ "int16", "int16test", 85 ]
+    ],
+    "uint16" => [
+        "\0\0\0\0\0\0\0\6uint16\0\0\0\0\0\nuint16test\0\0\0\0\0\00213\0\0\0\0\0\6things\0\0\0\0\0\3\0\0\0<\0\0\0\0",
+        [ "uint16", "uint16test", 13 ]
+    ],
+    "uint8" => [
+        "\0\0\0\0\0\0\0\5uint8\0\0\0\0\0\0\tuint8test\0\0\0\0\0\0\0017\0\0\0\0\0\0\6things\0\0\0\0\0\3\0\0\0<\0\0\0\0",
+        [ "uint8", "uint8test", 7 ]
+    ],
+);
+
+# test against self
+my $listener = IO::Socket::INET->new(
+    Proto       => 'udp',
+    LocalHost   => 'localhost',
+    LocalPort   => $test_port,
+    Reuse       => 1,
+);
+
+for my $type (sort keys %reference) {
+    # compare reference values to deparsed gmetric output
+    my @parsed = $gmetric->parse($reference{$type}[0]);
+    my $cmp = $reference{$type}[1];
+    is_deeply([@parsed[0..2]], $cmp, "$type: deparsed gmetric output");
+
+    # compare self-serialized values to self-deserialized
+    my $sent = $gmetric->gsend(@$cmp);
+
+    my $found = wait_for_readable($listener);
+    die "can't read from self" unless $found;
+
+    $listener->recv(my $buf, 256);
+    my @parsed = $gmetric->parse($buf);
+    is_deeply([@parsed[0..2]], $cmp, "$type: deparsed own output");
+}
+
+sub wait_for_readable {
+    my $sock = shift;
+    vec(my $rin = '', fileno($sock), 1) = 1;
+    return select(my $rout = $rin, undef, undef, 1);
+}
+

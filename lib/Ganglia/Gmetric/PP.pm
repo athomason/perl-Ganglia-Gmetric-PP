@@ -22,10 +22,9 @@ our $VERSION = 0.01;
 use strict;
 use warnings;
 
-use Ganglia::Gmetric::PP::XDR ':encode';
 use IO::Socket::INET;
 
-use base 'Exporter';
+use base 'Exporter', 'IO::Socket::INET';
 
 our @EXPORT_OK = qw(
     GANGLIA_VALUE_STRING
@@ -40,6 +39,9 @@ our @EXPORT_OK = qw(
     GANGLIA_SLOPE_NEGATIVE
     GANGLIA_SLOPE_BOTH
     GANGLIA_SLOPE_UNSPECIFIED
+);
+our %EXPORT_TAGS = (
+    'all' => \@EXPORT_OK,
 );
 
 =head1 FUNCTIONS
@@ -67,23 +69,6 @@ sub new {
 
     return bless $self, $class;
 }
-
-# see http://code.google.com/p/embeddedgmetric/wiki/GmetricProtocol
-use constant {
-    GANGLIA_VALUE_STRING            => string_to_xdr('string'),
-    GANGLIA_VALUE_UNSIGNED_SHORT    => string_to_xdr('uint16'),
-    GANGLIA_VALUE_SHORT             => string_to_xdr('int16'),
-    GANGLIA_VALUE_UNSIGNED_INT      => string_to_xdr('uint32'),
-    GANGLIA_VALUE_INT               => string_to_xdr('int32'),
-    GANGLIA_VALUE_FLOAT             => string_to_xdr('float'),
-    GANGLIA_VALUE_DOUBLE            => string_to_xdr('double'),
-
-    GANGLIA_SLOPE_ZERO              => enum_to_xdr(0), # data is fixed, mostly unchanging
-    GANGLIA_SLOPE_POSITIVE          => enum_to_xdr(1), # is always increasing (counter)
-    GANGLIA_SLOPE_NEGATIVE          => enum_to_xdr(2), # is always decreasing
-    GANGLIA_SLOPE_BOTH              => enum_to_xdr(3), # can be anything
-    GANGLIA_SLOPE_UNSPECIFIED       => enum_to_xdr(4),
-};
 
 =item * $gmetric->gsend($type, $id, $value, $unit, $slope, $tmax, $dmax)
 
@@ -161,17 +146,49 @@ The lifetime in seconds of this metric.
 
 =cut
 
+# exported constants. see http://code.google.com/p/embeddedgmetric/wiki/GmetricProtocol
+use constant {
+    GANGLIA_VALUE_STRING            => 'string',
+    GANGLIA_VALUE_UNSIGNED_SHORT    => 'uint16',
+    GANGLIA_VALUE_SHORT             => 'int16',
+    GANGLIA_VALUE_UNSIGNED_INT      => 'uint32',
+    GANGLIA_VALUE_INT               => 'int32',
+    GANGLIA_VALUE_FLOAT             => 'float',
+    GANGLIA_VALUE_DOUBLE            => 'double',
+
+    GANGLIA_SLOPE_ZERO              => 0, # data is fixed, mostly unchanging
+    GANGLIA_SLOPE_POSITIVE          => 1, # is always increasing (counter)
+    GANGLIA_SLOPE_NEGATIVE          => 2, # is always decreasing
+    GANGLIA_SLOPE_BOTH              => 3, # can be anything
+    GANGLIA_SLOPE_UNSPECIFIED       => 4,
+};
+
+# internal constants
+use constant {
+    MAGIC_ID                        => 0,
+    GMETRIC_FORMAT                  => 'N(N/a*x![4])4N3',
+
+    DEFAULT_SLOPE                   => 3,
+    DEFAULT_UNITS                   => '',
+    DEFAULT_TMAX                    => 60,
+    DEFAULT_DMAX                    => 0,
+};
+
 sub gsend {
-    $_[0]->send(join '',
-        "\0\0\0\0",           # magic
-        $_[1],                # type name
-        string_to_xdr($_[2]), # name
-        string_to_xdr($_[3]), # value
-        string_to_xdr($_[4]), # units
-        $_[5],                # slope
-        uint32_to_xdr($_[6]), # tmax
-        uint32_to_xdr($_[7]), # dmax
-    );
+    my $self = shift;
+    my @msg = (MAGIC_ID, @_);
+    $msg[4] = DEFAULT_UNITS unless defined $msg[4];
+    $msg[5] = DEFAULT_SLOPE unless defined $msg[5];
+    $msg[6] = DEFAULT_TMAX  unless defined $msg[6];
+    $msg[7] = DEFAULT_DMAX  unless defined $msg[7];
+    $self->print(pack GMETRIC_FORMAT, @msg);
+}
+
+sub parse {
+    my $self = shift;
+    my @res = unpack GMETRIC_FORMAT, $_[0];
+    die "bad magic" unless shift(@res) == MAGIC_ID;
+    return @res;
 }
 
 1;
