@@ -70,7 +70,7 @@ for my $type (sort keys %reference) {
     die "can't read from self" unless $found;
 
     $listener->recv(my $buf, 256);
-    my @parsed = $gmetric->parse($buf);
+    @parsed = $gmetric->parse($buf);
     is_deeply([@parsed[0..2]], $cmp, "$type: deparsed own output");
 }
 
