@@ -55,6 +55,7 @@ sub aggregator {
         $aggregate[METRIC_INDEX_VALUE] = $metric_aggregates{$metric} / $period;
         $aggregate[METRIC_INDEX_VALUE] = int($aggregate[METRIC_INDEX_VALUE])
             if $aggregate[METRIC_INDEX_TYPE] =~ /int/;
+        $aggregate[METRIC_INDEX_TMAX] = $period;
         $debug && print Data::Dumper->Dump([\@aggregate], ["${metric}_emitted"]);
         $emitter->gsend(@aggregate);
     }
