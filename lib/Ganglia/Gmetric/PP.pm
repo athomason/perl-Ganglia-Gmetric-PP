@@ -5,7 +5,7 @@ Ganglia::Gmetric::PP - Pure Perl emitter of Ganglia monitoring packets
 =head1 SYNOPSIS
 
     my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => 8649);
-    $gmetric->gsend($type, $id, $value, $unit, $slope, $tmax, $dmax);
+    $gmetric->gsend($type, $name, $value, $units, $slope, $tmax, $dmax);
 
 =head1 DESCRIPTION
 
@@ -39,6 +39,13 @@ our @EXPORT_OK = qw(
     GANGLIA_SLOPE_NEGATIVE
     GANGLIA_SLOPE_BOTH
     GANGLIA_SLOPE_UNSPECIFIED
+    METRIC_INDEX_TYPE
+    METRIC_INDEX_NAME
+    METRIC_INDEX_VALUE
+    METRIC_INDEX_UNITS
+    METRIC_INDEX_SLOPE
+    METRIC_INDEX_TMAX
+    METRIC_INDEX_DMAX
 );
 our %EXPORT_TAGS = (
     'all' => \@EXPORT_OK,
@@ -70,7 +77,7 @@ sub new {
     return bless $self, $class;
 }
 
-=item * $gmetric->gsend($type, $id, $value, $unit, $slope, $tmax, $dmax)
+=item * $gmetric->gsend($type, $name, $value, $units, $slope, $tmax, $dmax)
 
 Sends a Ganglia message. The parameters are:
 
@@ -98,7 +105,7 @@ The type of data being sent. Must be one of these importable constants:
 
 =back
 
-=item * $id
+=item * $name
 
 The name of the metric.
 
@@ -106,7 +113,7 @@ The name of the metric.
 
 The current value of the metric.
 
-=item * $unit
+=item * $units
 
 A string describing the units of measure for the metric.
 
@@ -161,6 +168,14 @@ use constant {
     GANGLIA_SLOPE_NEGATIVE          => 2, # is always decreasing
     GANGLIA_SLOPE_BOTH              => 3, # can be anything
     GANGLIA_SLOPE_UNSPECIFIED       => 4,
+
+    METRIC_INDEX_TYPE               => 0,
+    METRIC_INDEX_NAME               => 1,
+    METRIC_INDEX_VALUE              => 2,
+    METRIC_INDEX_UNITS              => 3,
+    METRIC_INDEX_SLOPE              => 4,
+    METRIC_INDEX_TMAX               => 5,
+    METRIC_INDEX_DMAX               => 6,
 };
 
 # internal constants
@@ -168,8 +183,8 @@ use constant {
     MAGIC_ID                        => 0,
     GMETRIC_FORMAT                  => 'N(N/a*x![4])4N3',
 
-    DEFAULT_SLOPE                   => 3,
     DEFAULT_UNITS                   => '',
+    DEFAULT_SLOPE                   => 3,
     DEFAULT_TMAX                    => 60,
     DEFAULT_DMAX                    => 0,
 };
