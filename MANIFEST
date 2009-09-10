@@ -4,3 +4,4 @@ MANIFEST
 README
 t/Ganglia-Gmetric-PP.t
 lib/Ganglia/Gmetric/PP.pm
+META.yml                                 Module meta-data (added by MakeMaker)
