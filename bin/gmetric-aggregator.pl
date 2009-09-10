@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Danga::Socket;
+use AnyEvent;
 use Data::Dumper;
 use Ganglia::Gmetric::PP ':all';
 use Getopt::Long;
@@ -46,7 +46,7 @@ sub handle {
     $metric_aggregates{ $sample[METRIC_INDEX_NAME] } += $sample[METRIC_INDEX_VALUE];
     $metric_templates{ $sample[METRIC_INDEX_NAME] } ||= \@sample;
 }
-Danga::Socket->AddOtherFds(fileno($listener), \&handle);
+my $watcher = AnyEvent->io(fh => $listener, poll => 'r', cb => \&handle);
 
 # periodically aggregate collected samples and re-emit to target gmond
 sub aggregator {
@@ -60,8 +60,7 @@ sub aggregator {
         $emitter->gsend(@aggregate);
     }
     %metric_aggregates = %metric_templates = ();
-    Danga::Socket->AddTimer($period, \&aggregator);
 }
-Danga::Socket->AddTimer($period, \&aggregator);
+my $timer = AnyEvent->timer(after => $period, interval => $period, cb => \&aggregator);
 
-Danga::Socket->EventLoop;
+AnyEvent->condvar->recv;
