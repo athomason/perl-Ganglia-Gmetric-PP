@@ -1,0 +1,6 @@
+steps = FindVersion, ChangeVersion, CheckChangeLog, DistTest, Commit, Tag, MakeDist, UploadCPAN
+
+git.tagpattern = %v
+git.push_to = git@github.com:athomason/perl-Ganglia-Gmetric-PP.git
+
+CheckChangeLog.files = Changes
