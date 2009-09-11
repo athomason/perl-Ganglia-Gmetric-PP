@@ -1,5 +1,7 @@
 Revision history for Perl extension Ganglia::Gmetric::PP.
 
+0.90  Thu Sep 10 17:36:50 PDT 2009
+        - first working version
 0.01  Tue Sep  1 23:43:33 2009
 	- original version; created by h2xs 1.23 with options
 		-AXc -n Ganglia::Gmetric::PP
