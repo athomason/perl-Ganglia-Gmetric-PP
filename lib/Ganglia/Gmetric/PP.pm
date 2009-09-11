@@ -1,6 +1,7 @@
 =head1 NAME
 
-Ganglia::Gmetric::PP - Pure Perl emitter of Ganglia monitoring packets
+Ganglia::Gmetric::PP - Pure Perl emitter/parser of Ganglia gmetric monitoring
+packets
 
 =head1 SYNOPSIS
 
@@ -10,14 +11,15 @@ Ganglia::Gmetric::PP - Pure Perl emitter of Ganglia monitoring packets
 =head1 DESCRIPTION
 
 This module constructs Ganglia packets in the manner of the gmetric program and
-sends them via UDP to a gmond. Though written in pure Perl with no non-core
-dependencies, it tries to be quite fast.
+sends them via UDP to a gmond. Additionally it can receive and/or parse gmetric
+packets which is useful for constructing proxies. Though written in pure Perl
+with no non-core dependencies, it tries to be fast.
 
 =cut
 
 package Ganglia::Gmetric::PP;
 
-our $VERSION = '0.95';
+our $VERSION = '0.96';
 
 use strict;
 use warnings;
