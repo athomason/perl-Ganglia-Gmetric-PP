@@ -8,7 +8,6 @@ use warnings;
 
 use Data::Dumper ();
 use Ganglia::Gmetric::PP ':all';
-use IO::Socket::INET;
 use Getopt::Long 'GetOptions';
 use Time::HiRes 'time';
 
@@ -69,12 +68,7 @@ my $emitter = Ganglia::Gmetric::PP->new(
 );
 
 # udp server socket
-my $listener = IO::Socket::INET->new(
-    Proto       => 'udp',
-    LocalHost   => $listen_host,
-    LocalPort   => $listen_port,
-    Reuse       => 1,
-);
+my $gmond = Ganglia::Gmetric::PP->new(listen_host => $listen_host, listen_port => $listen_port);
 
 # can only aggregate numeric types
 my %allowed_types = map {$_ => 1} qw/ double float int8 int16 int32 uint8 uint16 uint32 /;
@@ -83,11 +77,10 @@ my %allowed_types = map {$_ => 1} qw/ double float int8 int16 int32 uint8 uint16
 my %metric_aggregates;
 my %metric_templates;
 sub handle {
-    # udp packet has been received
-    return unless $listener->recv(my $buf, 1 << 14);
-
-    # parse and validate gmetric packet
-    my @sample = $emitter->parse($buf);
+    # receive and parse packet
+    my @sample;
+    eval { @sample = $gmond->receive };
+    return unless @sample;
     return unless $allowed_types{ $sample[METRIC_INDEX_TYPE] };
 
     # aggregate sums on the fly
@@ -100,10 +93,10 @@ sub handle {
 }
 my $watcher;
 if ($use_anyevent) {
-    $watcher = AnyEvent->io(fh => $listener, poll => 'r', cb => \&handle);
+    $watcher = AnyEvent->io(fh => $gmond, poll => 'r', cb => \&handle);
 }
 else {
-    Danga::Socket->AddOtherFds(fileno($listener), \&handle);
+    Danga::Socket->AddOtherFds(fileno($gmond), \&handle);
 }
 
 # periodically aggregate collected samples and re-emit to target gmond
@@ -126,7 +119,7 @@ sub aggregator {
         $aggregate[METRIC_INDEX_UNITS] .= $units_suffix;
         $aggregate[METRIC_INDEX_TMAX] = $period;
 
-        $emitter->gsend(@aggregate);
+        $emitter->send(@aggregate);
         $debug && warn Data::Dumper->Dump([\@aggregate], ["${metric}_aggregated"]);
     }
     %metric_aggregates = ();

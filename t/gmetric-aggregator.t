@@ -15,14 +15,6 @@ my @types = qw/ float double int8 uint8 int16 uint16 int32 uint32 /;
 
 plan(tests => scalar @types);
 
-# fake gmond
-my $listener = IO::Socket::INET->new(
-    Proto       => 'udp',
-    LocalHost   => 'localhost',
-    LocalPort   => $gmond_port,
-    Reuse       => 1,
-);
-
 # start proxy
 my $pid = fork;
 die "fork failed: $!" unless defined $pid;
@@ -44,6 +36,7 @@ my $start_time = time;
 sleep 1;
 
 my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => $proxy_port);
+my $gmond   = Ganglia::Gmetric::PP->new(listen_host => 'localhost', listen_port => $gmond_port);
 
 my %sums;
 for my $type (@types) {
@@ -52,20 +45,19 @@ for my $type (@types) {
     for (1..10) {
         my $value = rand 100;
         $value = int $value if $type =~ /int/;
-        my $sent = $gmetric->gsend($type, $name, $value, 'things');
+        my $sent = $gmetric->send($type, $name, $value, 'things');
         $sums{$type} += $value;
     }
 }
 
 for (@types) {
-    my $found = wait_for_readable($listener);
+    my $found = wait_for_readable($gmond);
     die "can't read from self" unless $found;
 
     my $end_time = time;
     my $duration = $end_time - $start_time;
 
-    $listener->recv(my $buf, 256);
-    my ($type, $name, $value) = $gmetric->parse($buf);
+    my ($type, $name, $value) = $gmond->receive;
 
     my $expected = $sums{$type} / $duration;
     my $deviation = abs($value - $expected) / $expected;

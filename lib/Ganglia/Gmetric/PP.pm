@@ -5,7 +5,7 @@ Ganglia::Gmetric::PP - Pure Perl emitter of Ganglia monitoring packets
 =head1 SYNOPSIS
 
     my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => 8649);
-    $gmetric->gsend($type, $name, $value, $units, $slope, $tmax, $dmax);
+    $gmetric->send($type, $name, $value, $units, $slope, $tmax, $dmax);
 
 =head1 DESCRIPTION
 
@@ -17,12 +17,10 @@ dependencies, it tries to be quite fast.
 
 package Ganglia::Gmetric::PP;
 
-our $VERSION = '0.94';
+our $VERSION = '0.95';
 
 use strict;
 use warnings;
-
-use IO::Socket::INET;
 
 use base 'Exporter', 'IO::Socket::INET';
 
@@ -59,8 +57,14 @@ our %EXPORT_TAGS = (
 
 =item * $gmetric = Ganglia::Gmetric::PP->new(host => $host, port => $port)
 
-Constructs a new object which talks to the specified host and port. If omitted,
-they default to localhost and 8649, respectively.
+Constructs a new object which sends gmetric packets to the specified C<host>
+and UDP C<port>. If omitted, they default to localhost and 8649, respectively.
+
+=item * $gmond = Ganglia::Gmetric::PP->new(listen_host => $host, listen_port => $port)
+
+Constructs a new object which receives gmetric packets (e.g. in a gmond replacement).
+If the $gmetric will be used for receiving packets, C<listen_host> and
+C<listen_port> may be specified as well.
 
 =cut
 
@@ -68,18 +72,29 @@ sub new {
     my $proto = shift;
     my $class = ref($proto) || $proto;
 
-    my %p = (host => 'localhost', port => 8649, @_);
+    my %p = @_;
+
+    my %opts;
+
+    $opts{LocalHost} = $p{listen_host} if $p{listen_host};
+    $opts{LocalPort} = $p{listen_port} if $p{listen_port};
+
+    unless (%opts) {
+        $opts{PeerHost} = $p{host} || 'localhost';
+        $opts{PeerPort} = $p{port} || 8649;
+    }
 
     my $self = IO::Socket::INET->new(
-        PeerAddr => $p{host},
-        PeerPort => $p{port},
         Proto    => 'udp',
+        %opts,
     );
+
+    die "failed to create socket: $!" unless $self;
 
     return bless $self, $class;
 }
 
-=item * $gmetric->gsend($type, $name, $value, $units, $slope, $tmax, $dmax)
+=item * $gmetric->send($type, $name, $value, $units, $slope, $tmax, $dmax)
 
 Sends a Ganglia message. The parameters are:
 
@@ -197,7 +212,7 @@ use constant {
     DEFAULT_DMAX                    => 0,
 };
 
-sub gsend {
+sub send {
     my $self = shift;
     my @msg = (MAGIC_ID, @_);
     $msg[4] = DEFAULT_UNITS unless defined $msg[4];
@@ -207,9 +222,33 @@ sub gsend {
     $self->print(pack GMETRIC_FORMAT, @msg);
 }
 
-sub parse {
+=item * @metric = $gmetric->receive()
+
+Waits for a single gmetric packet on the UDP listen port and returns the parsed
+metric (see C<parse>).
+
+=cut
+
+sub receive {
     my $self = shift;
-    my @res = unpack GMETRIC_FORMAT, $_[0];
+    return() unless $self->recv(my $buf, 1 << 14);
+    return $self->parse($buf);
+}
+
+=item * @metric = Ganglia::Gmetric::PP->parse($packet_data)
+
+Parses a gmetric packet, which is typically received by a UDP server.
+
+The elements returned match the arguments to C<send>:
+
+    ($type, $name, $value, $units, $slope, $tmax, $dmax) = @metric;
+
+This function may die if the given data does not resemble a gmetric packet.
+
+=cut
+
+sub parse {
+    my @res = unpack GMETRIC_FORMAT, $_[1];
     die "bad magic" unless shift(@res) == MAGIC_ID;
     return @res;
 }

@@ -70,4 +70,4 @@ usage('invalid slope')    unless exists $slopes{$slope};
 $slope = $slopes{$slope};
 
 my $gmetric = Ganglia::Gmetric::PP->new(host => $host, port => $port);
-$gmetric->gsend($type, $name, $value, $units, $slope, $tmax, $dmax);
+$gmetric->send($type, $name, $value, $units, $slope, $tmax, $dmax);

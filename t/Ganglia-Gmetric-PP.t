@@ -50,12 +50,7 @@ my %reference = (
 );
 
 # test against self
-my $listener = IO::Socket::INET->new(
-    Proto       => 'udp',
-    LocalHost   => 'localhost',
-    LocalPort   => $test_port,
-    Reuse       => 1,
-);
+my $gmond = Ganglia::Gmetric::PP->new(listen_host => 'localhost', listen_port => $test_port);
 
 for my $type (sort keys %reference) {
     # compare reference values to deparsed gmetric output
@@ -64,13 +59,12 @@ for my $type (sort keys %reference) {
     is_deeply([@parsed[0..2]], $cmp, "$type: deparsed gmetric output");
 
     # compare self-serialized values to self-deserialized
-    my $sent = $gmetric->gsend(@$cmp);
+    my $sent = $gmetric->send(@$cmp);
 
-    my $found = wait_for_readable($listener);
+    my $found = wait_for_readable($gmond);
     die "can't read from self" unless $found;
 
-    $listener->recv(my $buf, 256);
-    @parsed = $gmetric->parse($buf);
+    @parsed = $gmond->receive;
     is_deeply([@parsed[0..2]], $cmp, "$type: deparsed own output");
 }
 

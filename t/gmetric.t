@@ -11,17 +11,11 @@ my $gmetric_bin = "$Bin/../bin/gmetric.pl";
 $ENV{PERL5LIB} = join ':', @INC;
 
 my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => $test_port);
+my $gmond = Ganglia::Gmetric::PP->new(listen_host => 'localhost', listen_port => $test_port);
 
 my @types = qw/ string float double int8 uint8 int16 uint16 int32 uint32 /;
 
 plan(tests => scalar @types);
-
-my $listener = IO::Socket::INET->new(
-    Proto       => 'udp',
-    LocalHost   => 'localhost',
-    LocalPort   => $test_port,
-    Reuse       => 1,
-);
 
 for my $type (@types) {
     my $name = "${type}name";
@@ -34,11 +28,10 @@ for my $type (@types) {
         '--name'  => $name,
         '--value' => $value;
 
-    my $found = wait_for_readable($listener);
+    my $found = wait_for_readable($gmond);
     die "can't read from self" unless $found;
 
-    $listener->recv(my $buf, 256);
-    my @parsed = $gmetric->parse($buf);
+    my @parsed = $gmond->receive;
     is_deeply([@parsed[0..2]], [$type, $name, $value], $type);
 }
 
