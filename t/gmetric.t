@@ -3,11 +3,10 @@ use warnings;
 
 use Test::More;
 
-use FindBin '$Bin';
 use Ganglia::Gmetric::PP;
 
 my $test_port = 8650;
-my $gmetric_bin = "$Bin/../bin/gmetric.pl";
+my $gmetric_bin = "blib/script/gmetric.pl";
 $ENV{PERL5LIB} = join ':', @INC;
 
 my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => $test_port);

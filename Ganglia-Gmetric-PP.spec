@@ -7,7 +7,6 @@
 #
 
 %define pkgname Ganglia-Gmetric-PP
-%define filelist %{pkgname}-%{version}-filelist
 %define NVR %{pkgname}-%{version}-%{release}
 %define maketest 1
 
@@ -56,69 +55,26 @@ CFLAGS="$RPM_OPT_FLAGS"
 
 %{makeinstall} `%{__perl} -MExtUtils::MakeMaker -e ' print \$ExtUtils::MakeMaker::VERSION <= 6.05 ? qq|PREFIX=%{buildroot}%{_prefix}| : qq|DESTDIR=%{buildroot}| '`
 
-cmd=/usr/share/spec-helper/compress_files
-[ -x $cmd ] || cmd=/usr/lib/rpm/brp-compress
-[ -x $cmd ] && $cmd
-
-# SuSE Linux
-if [ -e /etc/SuSE-release -o -e /etc/UnitedLinux-release ]
-then
-    %{__mkdir_p} %{buildroot}/var/adm/perl-modules
-    %{__cat} `find %{buildroot} -name "perllocal.pod"`  \
-        | %{__sed} -e s+%{buildroot}++g                 \
-        > %{buildroot}/var/adm/perl-modules/%{name}
-fi
-
-# remove special files
-find %{buildroot} -name "perllocal.pod" \
-    -o -name ".packlist"                \
-    -o -name "*.bs"                     \
-    |xargs -i rm -f {}
-
-# no empty directories
-find %{buildroot}%{_prefix}             \
-    -type d -depth                      \
-    -exec rmdir {} \; 2>/dev/null
-
-%{__perl} -MFile::Find -le '
-    find({ wanted => \&wanted, no_chdir => 1}, "%{buildroot}");
-    print "%doc  Changes README";
-    for my $x (sort @dirs, @files) {
-        push @ret, $x unless indirs($x);
-        }
-    print join "\n", sort @ret;
-
-    sub wanted {
-        return if /auto$/;
-
-        local $_ = $File::Find::name;
-        my $f = $_; s|^\Q%{buildroot}\E||;
-        return unless length;
-        return $files[@files] = $_ if -f $f;
-
-        $d = $_;
-        /\Q$d\E/ && return for reverse sort @INC;
-        $d =~ /\Q$_\E/ && return
-            for qw|/etc %_prefix/man %_prefix/bin %_prefix/share|;
-
-        $dirs[@dirs] = $_;
-        }
-
-    sub indirs {
-        my $x = shift;
-        $x =~ /^\Q$_\E\// && $x ne $_ && return 1 for @dirs;
-        }
-    ' > %filelist
-
-[ -z %filelist ] && {
-    echo "ERROR: empty %files listing"
-    exit -1
-    }
-
 %clean
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
-%files -f %filelist
+%files
+
+Changes
+Makefile.PL
+MANIFEST
+MANIFEST.SKIP
+README
+Ganglia-Gmetric-PP.spec
+lib/Ganglia/Gmetric/PP.pm
+%attr(775,-,-) bin/gmetric-aggregator.pl
+%attr(775,-,-) bin/gmetric.pl
+t/Ganglia-Gmetric-PP.t
+t/gmetric-aggregator.t
+t/gmetric.t
+t/gen-test-data.pl
+META.yml                                 Module meta-data (added by MakeMaker)
+
 %defattr(-,root,root)
 
 %changelog

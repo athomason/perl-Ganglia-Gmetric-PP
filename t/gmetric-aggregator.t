@@ -3,12 +3,11 @@ use warnings;
 
 use Test::More;
 
-use FindBin '$Bin';
 use Ganglia::Gmetric::PP;
 
 my $proxy_port = 8650;
 my $gmond_port = 8651;
-my $aggregator_bin = "$Bin/../bin/gmetric-aggregator.pl";
+my $aggregator_bin = "blib/script/gmetric-aggregator.pl";
 my $aggregation_period = 5;
 
 my @types = qw/ float double int8 uint8 int16 uint16 int32 uint32 /;
