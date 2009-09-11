@@ -1,7 +1,10 @@
 Changes
 Makefile.PL
 MANIFEST
+MANIFEST.SKIP
 README
 t/Ganglia-Gmetric-PP.t
 lib/Ganglia/Gmetric/PP.pm
+bin/gmetric-aggregator.pl
+bin/gmetric.pl
 META.yml                                 Module meta-data (added by MakeMaker)
