@@ -17,7 +17,7 @@ dependencies, it tries to be quite fast.
 
 package Ganglia::Gmetric::PP;
 
-our $VERSION = '0.93';
+our $VERSION = '0.94';
 
 use strict;
 use warnings;

@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Ganglia-Gmetric-PP
-version:             0.93
+version:             0.94
 abstract:            Pure Perl emitter of Ganglia monitoring packets
 license:             ~
 author:              
