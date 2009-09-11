@@ -25,8 +25,6 @@ buildarch: noarch
 prefix:    %(echo %{_prefix})
 source:    Ganglia-Gmetric-PP-0.92.tar.gz
 
-requires:  perl(AnyEvent), perl(AnyEvent::Impl::EV)
-
 %description
 This module constructs Ganglia packets in the manner of the gmetric program and
 sends them via UDP to a gmond. Though written in pure Perl with no non-core
