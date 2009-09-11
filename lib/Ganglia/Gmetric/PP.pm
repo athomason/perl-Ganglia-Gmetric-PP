@@ -28,6 +28,8 @@ use base 'Exporter', 'IO::Socket::INET';
 
 our @EXPORT_OK = qw(
     GANGLIA_VALUE_STRING
+    GANGLIA_VALUE_UNSIGNED_CHAR
+    GANGLIA_VALUE_CHAR
     GANGLIA_VALUE_UNSIGNED_SHORT
     GANGLIA_VALUE_SHORT
     GANGLIA_VALUE_UNSIGNED_INT
@@ -90,6 +92,10 @@ The type of data being sent. Must be one of these importable constants:
 =over 4
 
 =item * GANGLIA_VALUE_STRING
+
+=item * GANGLIA_VALUE_UNSIGNED_CHAR
+
+=item * GANGLIA_VALUE_CHAR
 
 =item * GANGLIA_VALUE_UNSIGNED_SHORT
 
@@ -156,6 +162,8 @@ The lifetime in seconds of this metric.
 # exported constants. see http://code.google.com/p/embeddedgmetric/wiki/GmetricProtocol
 use constant {
     GANGLIA_VALUE_STRING            => 'string',
+    GANGLIA_VALUE_UNSIGNED_CHAR     => 'uint8',
+    GANGLIA_VALUE_CHAR              => 'int8',
     GANGLIA_VALUE_UNSIGNED_SHORT    => 'uint16',
     GANGLIA_VALUE_SHORT             => 'int16',
     GANGLIA_VALUE_UNSIGNED_INT      => 'uint32',

@@ -77,7 +77,7 @@ my $listener = IO::Socket::INET->new(
 );
 
 # can only aggregate numeric types
-my %allowed_types = map {$_ => 1} qw/ double float int16 int32 uint16 uint32 /;
+my %allowed_types = map {$_ => 1} qw/ double float int8 int16 int32 uint8 uint16 uint32 /;
 
 # store gmetric events as they are received
 my %metric_aggregates;

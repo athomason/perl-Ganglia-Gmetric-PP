@@ -63,7 +63,7 @@ usage if $help;
 usage('--name required')  unless defined $name;
 usage('--value required') unless defined $value;
 usage('--type required')  unless defined $type;
-usage('invalid type')     unless exists $types{$type};
+usage("invalid type '$type'")     unless exists $types{$type};
 usage('invalid slope')    unless exists $slopes{$slope};
 
 $slope = $slopes{$slope};
