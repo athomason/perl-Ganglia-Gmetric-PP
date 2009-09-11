@@ -79,4 +79,3 @@ sub wait_for_readable {
     vec(my $rin = '', fileno($sock), 1) = 1;
     return select(my $rout = $rin, undef, undef, 1);
 }
-
