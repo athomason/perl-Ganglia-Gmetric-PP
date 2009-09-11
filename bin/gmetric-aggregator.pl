@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 
+# gmetric proxy which consumes metric samples consisting of absolute values and
+# re-emits aggregated rate metrics to gmond instead
+
 use strict;
 use warnings;
 
@@ -23,6 +26,7 @@ Usage: $me [OPTIONS]...
   -P, --listen-port=INT     Local UDP port to listen on. Default 18649
   -n, --period=INT          Time period in seconds between aggregations. Default 60
   -s, --suffix=STRING       Suffix to append to gmetric units. Default "/s"
+  -d, --daemon              Run in daemon mode.
   -g, --debug               Display debugging output
   --help                    Print help and exit
 EOU
@@ -37,6 +41,7 @@ GetOptions(
     'P|listen-port=i'   => \(my $listen_port    = 18649),
     'n|period=i'        => \(my $period         = 60),
     's|suffix=s'        => \(my $units_suffix   = '/s'),
+    'd|daemon!'         => \(my $daemonize),
     'g|debug'           => \(my $debug),
     'help!'             => \(my $help),
 ) || usage;
@@ -132,6 +137,11 @@ sub aggregator {
     else {
         Danga::Socket->AddTimer($period, \&aggregator);
     }
+}
+
+if ($daemonize) {
+    die "Proc::Daemon not available" unless eval "use Proc::Daemon; 1";
+    Proc::Daemon::Init();
 }
 
 # run event loop
