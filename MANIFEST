@@ -3,8 +3,10 @@ Makefile.PL
 MANIFEST
 MANIFEST.SKIP
 README
-t/Ganglia-Gmetric-PP.t
+Ganglia-Gmetric-PP.spec
 lib/Ganglia/Gmetric/PP.pm
 bin/gmetric-aggregator.pl
 bin/gmetric.pl
+t/Ganglia-Gmetric-PP.t
+t/gen-test-data.pl
 META.yml                                 Module meta-data (added by MakeMaker)
