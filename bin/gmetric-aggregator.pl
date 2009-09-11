@@ -8,6 +8,7 @@ use warnings;
 
 use Data::Dumper ();
 use Ganglia::Gmetric::PP ':all';
+use IO::Socket::INET;
 use Getopt::Long 'GetOptions';
 use Time::HiRes 'time';
 
