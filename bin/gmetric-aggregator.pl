@@ -87,6 +87,7 @@ sub handle {
     return unless @sample;
     return unless $allowed_types{ $sample[METRIC_INDEX_TYPE] };
 
+    # start counting at receipt of first event
     $last_time ||= time;
 
     # aggregate sums on the fly
@@ -108,8 +109,8 @@ else {
 # periodically aggregate collected samples and re-emit to target gmond
 my $timer;
 sub aggregator {
-    my $time = time;
     return unless $last_time; # no events so far
+    my $time = time;
     my $measured_period = $time - $last_time;
     $debug && warn "Aggregating at $time ($measured_period elapsed)\n";
 
