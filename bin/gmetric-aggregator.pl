@@ -109,6 +109,7 @@ else {
 my $timer;
 sub aggregator {
     my $time = time;
+    return unless $last_time; # no events so far
     my $measured_period = $time - $last_time;
     $debug && warn "Aggregating at $time ($measured_period elapsed)\n";
 
