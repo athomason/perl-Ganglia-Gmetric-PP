@@ -109,33 +109,37 @@ else {
 # periodically aggregate collected samples and re-emit to target gmond
 my $timer;
 sub aggregator {
-    return unless $last_time; # no events so far
-    my $time = time;
-    my $measured_period = $time - $last_time;
-    $debug && warn "Aggregating at $time ($measured_period elapsed)\n";
+    if ($last_time) {
+        my $time = time;
+        my $measured_period = $time - $last_time;
+        $debug && warn "Aggregating at $time ($measured_period elapsed)\n";
 
-    # emit for any metric seen before, even if it wasn't seen in the last period
-    for my $metric (keys %metric_templates) {
-        my @aggregate = @{ $metric_templates{$metric} };
+        # emit for any metric seen before, even if it wasn't seen in the last period
+        for my $metric (keys %metric_templates) {
+            my @aggregate = @{ $metric_templates{$metric} };
 
-        # aggregated value is rate of metric over last period
-        $aggregate[METRIC_INDEX_VALUE] = ($metric_aggregates{$metric}||0) / ($measured_period||1);
+            # aggregated value is rate of metric over last period
+            $aggregate[METRIC_INDEX_VALUE] = ($metric_aggregates{$metric}||0) / ($measured_period||1);
 
-        if ($output_doubles) {
-            $aggregate[METRIC_INDEX_TYPE] = GANGLIA_VALUE_DOUBLE;
+            if ($output_doubles) {
+                $aggregate[METRIC_INDEX_TYPE] = GANGLIA_VALUE_DOUBLE;
+            }
+            elsif ($aggregate[METRIC_INDEX_TYPE] =~ /int/) {
+                $aggregate[METRIC_INDEX_VALUE] = int($aggregate[METRIC_INDEX_VALUE])
+            }
+
+            $aggregate[METRIC_INDEX_UNITS] .= $units_suffix;
+            $aggregate[METRIC_INDEX_TMAX] = $period;
+
+            $emitter->send(@aggregate);
+
+            $debug && warn Data::Dumper->Dump([\@aggregate], ["${metric}_aggregated"]);
         }
-        elsif ($aggregate[METRIC_INDEX_TYPE] =~ /int/) {
-            $aggregate[METRIC_INDEX_VALUE] = int($aggregate[METRIC_INDEX_VALUE])
-        }
+        %metric_aggregates = ();
 
-        $aggregate[METRIC_INDEX_UNITS] .= $units_suffix;
-        $aggregate[METRIC_INDEX_TMAX] = $period;
-
-        $emitter->send(@aggregate);
+        $last_time = $time;
     }
-    %metric_aggregates = ();
 
-    $last_time = $time;
     if ($use_anyevent) {
         $timer = AnyEvent->timer(after => $period, cb => \&aggregator);
     }
