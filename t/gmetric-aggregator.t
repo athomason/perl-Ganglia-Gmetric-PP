@@ -29,7 +29,6 @@ for my $upgrade_types (0, 1) {
             '--listen-host' => 'localhost',
             '--listen-port' => $proxy_port,
             '--period'      => $aggregation_period,
-            '-g',
             $upgrade_types ? '--floating' : '--no-floating',
         ;
         die "exec failed: $!";
