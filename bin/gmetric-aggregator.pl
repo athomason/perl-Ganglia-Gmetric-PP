@@ -20,7 +20,7 @@ $me $Ganglia::Gmetric::PP::VERSION
 
 Usage: $me [OPTIONS]...
 
-  -h, --remote-host=STRING  Remote host where gmond is running (required)
+  -h, --remote-host=STRING  Remote host where gmond is running. Default localhost
   -p, --remote-port=INT     Remote port where gmond is running. Default 8649
   -H, --listen-host=STRING  Local interface to listen on. Default 0.0.0.0
   -P, --listen-port=INT     Local UDP port to listen on. Default 18649
@@ -28,6 +28,7 @@ Usage: $me [OPTIONS]...
   -s, --suffix=STRING       Suffix to append to gmetric units. Default "/s"
   -f, --[no]-floating       Always use "double" type instead of original metrics' types. Default on
   -d, --daemon              Run in daemon mode.
+  -F, --pidfile=FILE        File to write PID to in daemon mode.
   -g, --debug               Display debugging output
   --help                    Print help and exit
 EOU
@@ -36,7 +37,7 @@ EOU
 
 Getopt::Long::Configure('no_ignore_case');
 GetOptions(
-    'h|remote-host=s'   => \(my $remote_host),
+    'h|remote-host=s'   => \(my $remote_host    = '127.0.0.1'),
     'p|remote-port=i'   => \(my $remote_port    = 8649),
     'H|listen-host=s'   => \(my $listen_host    = '0.0.0.0'),
     'P|listen-port=i'   => \(my $listen_port    = 18649),
@@ -44,6 +45,7 @@ GetOptions(
     's|suffix=s'        => \(my $units_suffix   = '/s'),
     'f|floating!'       => \(my $output_doubles = 1),
     'd|daemon!'         => \(my $daemonize),
+    'F|pidfile!'        => \(my $pidfile),
     'g|debug'           => \(my $debug),
     'help!'             => \(my $help),
 ) || usage;
@@ -151,6 +153,10 @@ sub aggregator {
 if ($daemonize) {
     die "Proc::Daemon not available" unless eval "use Proc::Daemon; 1";
     Proc::Daemon::Init();
+}
+
+if ($pidfile && open my $pid_fh, '>', $pidfile) {
+    print $pidfile, "$$\n";
 }
 
 # run event loop
