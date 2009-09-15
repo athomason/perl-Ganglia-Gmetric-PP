@@ -45,7 +45,7 @@ GetOptions(
     's|suffix=s'        => \(my $units_suffix   = '/s'),
     'f|floating!'       => \(my $output_doubles = 1),
     'd|daemon!'         => \(my $daemonize),
-    'F|pidfile!'        => \(my $pidfile),
+    'F|pidfile=s'       => \(my $pidfile),
     'g|debug'           => \(my $debug),
     'help!'             => \(my $help),
 ) || usage;
