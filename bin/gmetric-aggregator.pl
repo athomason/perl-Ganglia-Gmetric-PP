@@ -159,6 +159,7 @@ if ($pidfile && open my $pid_fh, '>', $pidfile) {
     print $pid_fh "$$\n";
     close $pid_fh;
 }
+END { unlink $pidfile if $pidfile }
 
 # run event loop
 if ($use_anyevent) {
