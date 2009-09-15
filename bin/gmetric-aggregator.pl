@@ -66,6 +66,17 @@ else {
     die "need either AnyEvent or Danga::Socket module";
 }
 
+if ($daemonize) {
+    die "Proc::Daemon not available" unless eval "use Proc::Daemon; 1";
+    Proc::Daemon::Init();
+}
+
+if ($pidfile && open my $pid_fh, '>', $pidfile) {
+    print $pid_fh "$$\n";
+    close $pid_fh;
+}
+END { unlink $pidfile if $pidfile }
+
 my $emitter = Ganglia::Gmetric::PP->new(
     host => $remote_host,
     port => $remote_port,
@@ -149,17 +160,6 @@ sub aggregator {
         Danga::Socket->AddTimer($period, \&aggregator);
     }
 }
-
-if ($daemonize) {
-    die "Proc::Daemon not available" unless eval "use Proc::Daemon; 1";
-    Proc::Daemon::Init();
-}
-
-if ($pidfile && open my $pid_fh, '>', $pidfile) {
-    print $pid_fh "$$\n";
-    close $pid_fh;
-}
-END { unlink $pidfile if $pidfile }
 
 # run event loop
 if ($use_anyevent) {
