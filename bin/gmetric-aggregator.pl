@@ -156,7 +156,8 @@ if ($daemonize) {
 }
 
 if ($pidfile && open my $pid_fh, '>', $pidfile) {
-    print $pidfile, "$$\n";
+    print $pid_fh "$$\n";
+    close $pid_fh;
 }
 
 # run event loop
