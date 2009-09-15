@@ -19,7 +19,7 @@ with no non-core dependencies, it tries to be fast.
 
 package Ganglia::Gmetric::PP;
 
-our $VERSION = '0.97';
+our $VERSION = '0.98';
 
 use strict;
 use warnings;

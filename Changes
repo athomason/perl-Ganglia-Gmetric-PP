@@ -1,5 +1,7 @@
 Revision history for Perl extension Ganglia::Gmetric::PP.
 
+0.98  Tue Sep 15 14:49:19 PDT 2009
+        - Options changes
 0.97  Mon Sep 14 14:02:33 PDT 2009
         - Use sendto
 0.96  Fri Sep 11 16:00:45 PDT 2009
