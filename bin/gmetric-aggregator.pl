@@ -1,7 +1,7 @@
 #!perl
 
 # gmetric proxy which consumes metric samples consisting of absolute values and
-# re-emits aggregated rate metrics to gmond instead
+# re-emits time-aggregated rate metrics to gmond instead
 
 use strict;
 use warnings;
@@ -20,17 +20,20 @@ $me $Ganglia::Gmetric::PP::VERSION
 
 Usage: $me [OPTIONS]...
 
-  -h, --remote-host=STRING  Remote host where gmond is running. Default localhost
-  -p, --remote-port=INT     Remote port where gmond is running. Default 8649
-  -H, --listen-host=STRING  Local interface to listen on. Default 0.0.0.0
-  -P, --listen-port=INT     Local UDP port to listen on. Default 18649
-  -n, --period=INT          Time period in seconds between aggregations. Default 60
-  -s, --suffix=STRING       Suffix to append to gmetric units. Default "/s"
-  -f, --[no]-floating       Always use "double" type instead of original metrics' types. Default on
-  -d, --daemon              Run in daemon mode.
-  -F, --pidfile=FILE        File to write PID to in daemon mode.
-  -g, --debug               Display debugging output
-  --help                    Print help and exit
+  -h, --remote-host=STRING   Remote host where gmond is running. Default localhost
+  -p, --remote-port=INT      Remote port where gmond is running. Default 8649
+  -H, --listen-host=STRING   Local interface to listen on. Default 0.0.0.0
+  -P, --listen-port=INT      Local UDP port to listen on. Default 18649
+  -u, --unit-suffix=STRING   Suffix to append to gmetric units. Default "/s"
+  -m, --metric-suffix=STRING Suffix to append to metric names. Default "_rate"
+  -n, --period=INT           Time period in seconds between aggregations. Default 60
+  -N, --multiplier=FLOAT     Amount to multiply output values by. Default 1
+                              (e.g., use "-N 3600 -u /hour" to emit per-hour metrics).
+  -f, --[no]-floating        Always use "double" type instead of original metrics' types. Default on
+  -d, --daemon               Run in daemon mode.
+  -F, --pidfile=FILE         File to write PID to in daemon mode.
+  -g, --debug                Display debugging output
+  --help                     Print help and exit
 EOU
     exit 1;
 }
@@ -41,8 +44,10 @@ GetOptions(
     'p|remote-port=i'   => \(my $remote_port    = 8649),
     'H|listen-host=s'   => \(my $listen_host    = '0.0.0.0'),
     'P|listen-port=i'   => \(my $listen_port    = 18649),
-    'n|period=i'        => \(my $period         = 60),
-    's|suffix=s'        => \(my $units_suffix   = '/s'),
+    'u|unit-suffix=s'   => \(my $units_suffix   = '/s'),
+    'm|metric-suffix=s' => \(my $metric_suffix  = '_rate'),
+    'n|report-period=i' => \(my $period         = 60),
+    'N|multiplier=i'    => \(my $multiplier     = 1.0),
     'f|floating!'       => \(my $output_doubles = 1),
     'd|daemon!'         => \(my $daemonize),
     'F|pidfile=s'       => \(my $pidfile),
@@ -141,12 +146,14 @@ sub aggregator {
                 $aggregate[METRIC_INDEX_VALUE] = int($aggregate[METRIC_INDEX_VALUE])
             }
 
+            $aggregate[METRIC_INDEX_NAME]  .= $metric_suffix;
             $aggregate[METRIC_INDEX_UNITS] .= $units_suffix;
+            $aggregate[METRIC_INDEX_VALUE] *= $multiplier;
             $aggregate[METRIC_INDEX_TMAX] = $period;
 
             $emitter->send(@aggregate);
 
-            $debug && warn Data::Dumper->Dump([\@aggregate], ["${metric}_aggregated"]);
+            $debug && warn Data::Dumper->Dump([\@aggregate], [$metric]);
         }
         %metric_aggregates = ();
 
