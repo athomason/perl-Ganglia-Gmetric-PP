@@ -46,7 +46,7 @@ GetOptions(
     'P|listen-port=i'   => \(my $listen_port    = 18649),
     'u|unit-suffix=s'   => \(my $units_suffix   = '/s'),
     'm|metric-suffix=s' => \(my $metric_suffix  = '_rate'),
-    'n|report-period=i' => \(my $period         = 60),
+    'n|period=i'        => \(my $period         = 60),
     'N|multiplier=i'    => \(my $multiplier     = 1.0),
     'f|floating!'       => \(my $output_doubles = 1),
     'd|daemon!'         => \(my $daemonize),
