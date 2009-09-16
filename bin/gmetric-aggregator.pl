@@ -84,6 +84,14 @@ if ($pidfile && open my $pid_fh, '>', $pidfile) {
 }
 END { unlink $pidfile if $pidfile }
 
+my $emitter = Ganglia::Gmetric::PP->new(
+    host => $remote_host,
+    port => $remote_port,
+);
+
+# udp server socket
+my $gmond = Ganglia::Gmetric::PP->new(listen_host => $listen_host, listen_port => $listen_port);
+
 if (defined $user) {
     die "POSIX not available" unless eval "use POSIX (); 1";
     my ($uid, $gid) = (getpwnam $user)[2, 3];
@@ -92,14 +100,6 @@ if (defined $user) {
     POSIX::setgid($gid) or die "failed to set gid to $gid: $!";
     POSIX::setuid($uid) or die "failed to set uid to $uid: $!";
 }
-
-my $emitter = Ganglia::Gmetric::PP->new(
-    host => $remote_host,
-    port => $remote_port,
-);
-
-# udp server socket
-my $gmond = Ganglia::Gmetric::PP->new(listen_host => $listen_host, listen_port => $listen_port);
 
 # can only aggregate numeric types
 my %allowed_types = map {$_ => 1} qw/ double float int8 int16 int32 uint8 uint16 uint32 /;
