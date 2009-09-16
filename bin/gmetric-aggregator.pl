@@ -31,6 +31,7 @@ Usage: $me [OPTIONS]...
                               (e.g., use "-N 3600 -u /hour" to emit per-hour metrics).
   -f, --[no]-floating        Always use "double" type instead of original metrics' types. Default on
   -d, --daemon               Run in daemon mode.
+  -U, --user                 User to drop to (only if started as root)
   -F, --pidfile=FILE         File to write PID to in daemon mode.
   -g, --debug                Display debugging output
   --help                     Print help and exit
@@ -50,6 +51,7 @@ GetOptions(
     'N|multiplier=i'    => \(my $multiplier     = 1.0),
     'f|floating!'       => \(my $output_doubles = 1),
     'd|daemon!'         => \(my $daemonize),
+    'U|user=s'          => \(my $user),
     'F|pidfile=s'       => \(my $pidfile),
     'g|debug'           => \(my $debug),
     'help!'             => \(my $help),
@@ -72,7 +74,7 @@ else {
 }
 
 if ($daemonize) {
-    die "Proc::Daemon not available" unless eval "use Proc::Daemon; 1";
+    die "Proc::Daemon not available" unless eval "use Proc::Daemon (); 1";
     Proc::Daemon::Init();
 }
 
@@ -81,6 +83,15 @@ if ($pidfile && open my $pid_fh, '>', $pidfile) {
     close $pid_fh;
 }
 END { unlink $pidfile if $pidfile }
+
+if (defined $user) {
+    die "POSIX not available" unless eval "use POSIX (); 1";
+    my ($uid, $gid) = (getpwnam $user)[2, 3];
+    die "couldn't find uid/gid for user $user" unless defined $uid && defined $gid;
+    $debug && warn "Dropping to uid=$uid/gid=$gid\n";
+    POSIX::setgid($gid) or die "failed to set gid to $gid: $!";
+    POSIX::setuid($uid) or die "failed to set uid to $uid: $!";
+}
 
 my $emitter = Ganglia::Gmetric::PP->new(
     host => $remote_host,
