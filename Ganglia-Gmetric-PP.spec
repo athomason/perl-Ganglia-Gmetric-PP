@@ -14,7 +14,7 @@
 name:      perl-Ganglia-Gmetric-PP
 summary:   Ganglia-Gmetric-PP - Pure Perl emitter of Ganglia monitoring packets
 version:   1.00
-release:   1
+release:   2
 vendor:    Adam Thomason <athomason@cpan.org>
 packager:  Arix International <cpan2rpm@arix.com>
 license:   Artistic
@@ -24,6 +24,9 @@ buildroot: %{_tmppath}/%{name}-%{version}-%(id -u -n)
 buildarch: noarch
 prefix:    %(echo %{_prefix})
 source:    Ganglia-Gmetric-PP-1.00.tar.gz
+
+requires:  perl(Danga::Socket)
+requires:  perl(Proc::Daemon)
 
 %description
 This module constructs Ganglia packets in the manner of the gmetric program and
