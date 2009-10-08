@@ -1,4 +1,4 @@
-#!perl
+#! /usr/bin/perl
 
 # gmetric proxy which consumes metric samples consisting of absolute values and
 # re-emits time-aggregated rate metrics to gmond instead

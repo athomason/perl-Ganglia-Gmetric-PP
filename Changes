@@ -1,5 +1,7 @@
 Revision history for Perl extension Ganglia::Gmetric::PP.
 
+1.01  Thu Oct  8 16:26:06 PDT 2009
+        - Skip aggregator test if its dependencies are missing
 1.00  Wed Sep 16 15:27:57 PDT 2009
         - Add more options for manipulating output metrics in aggregator
 0.99  Tue Sep 15 16:38:28 PDT 2009

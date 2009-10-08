@@ -13,6 +13,11 @@ my $aggregation_period = 5;
 
 my @types = qw/ float double int8 uint8 int16 uint16 int32 uint32 /;
 
+unless (eval "use AnyEvent; 1" || eval "use Danga::Socket; 1") {
+    plan skip_all => 'Need AnyEvent or Danga::Socket';
+    exit;
+}
+
 plan(tests => 2 * scalar @types);
 
 for my $upgrade_types (0, 1) {
