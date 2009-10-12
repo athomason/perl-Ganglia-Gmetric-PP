@@ -14,7 +14,7 @@
 name:      perl-Ganglia-Gmetric-PP
 summary:   Ganglia-Gmetric-PP - Pure Perl emitter of Ganglia monitoring packets
 version:   1.01
-release:   2
+release:   1
 vendor:    Adam Thomason <athomason@cpan.org>
 packager:  Arix International <cpan2rpm@arix.com>
 license:   Artistic
