@@ -20,6 +20,11 @@ unless (eval "use AnyEvent; 1" || eval "use Danga::Socket; 1") {
 
 plan(tests => 2 * scalar @types);
 
+$SIG{ALRM} = sub {
+    die "test timeout hit\n";
+};
+alarm 20;
+
 for my $upgrade_types (0, 1) {
 
     # start proxy
