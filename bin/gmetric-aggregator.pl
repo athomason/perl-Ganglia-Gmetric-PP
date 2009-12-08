@@ -20,8 +20,7 @@ $me $Ganglia::Gmetric::PP::VERSION
 
 Usage: $me [OPTIONS]...
 
-  -h, --remote-host=STRING   Remote host where gmond is running. Default localhost
-  -p, --remote-port=INT      Remote port where gmond is running. Default 8649
+      --gmetric=PATH         Path to gmetric(1) binary
   -H, --listen-host=STRING   Local interface to listen on. Default 0.0.0.0
   -P, --listen-port=INT      Local UDP port to listen on. Default 18649
   -u, --unit-suffix=STRING   Suffix to append to gmetric units. Default "/s"
@@ -41,8 +40,7 @@ EOU
 
 Getopt::Long::Configure('no_ignore_case');
 GetOptions(
-    'h|remote-host=s'   => \(my $remote_host    = '127.0.0.1'),
-    'p|remote-port=i'   => \(my $remote_port    = 8649),
+    'gmetric=s'         => \(my $gmetric),
     'H|listen-host=s'   => \(my $listen_host    = '0.0.0.0'),
     'P|listen-port=i'   => \(my $listen_port    = 18649),
     'u|unit-suffix=s'   => \(my $units_suffix   = '/s'),
@@ -57,8 +55,14 @@ GetOptions(
     'help!'             => \(my $help),
 ) || usage;
 
+unless ($gmetric) {
+    $gmetric = qx(which gmetric);
+    die "can't find gmetric\n" unless $gmetric;
+    chomp $gmetric;
+}
+die "can't run gmetric\n" unless -x $gmetric;
+
 usage if $help;
-usage('--remote-host needed') unless defined $remote_host;
 
 my $use_anyevent;
 if (eval "use AnyEvent; 1") {
@@ -83,11 +87,6 @@ if ($pidfile && open my $pid_fh, '>', $pidfile) {
     close $pid_fh;
 }
 END { unlink $pidfile if $pidfile }
-
-my $emitter = Ganglia::Gmetric::PP->new(
-    host => $remote_host,
-    port => $remote_port,
-);
 
 # udp server socket
 my $gmond = Ganglia::Gmetric::PP->new(listen_host => $listen_host, listen_port => $listen_port);
@@ -135,6 +134,8 @@ else {
     Danga::Socket->AddOtherFds(fileno($gmond), \&handle);
 }
 
+$SIG{CHLD} = 'IGNORE';
+
 # periodically aggregate collected samples and re-emit to target gmond
 my $timer;
 sub aggregator {
@@ -162,7 +163,18 @@ sub aggregator {
             $aggregate[METRIC_INDEX_VALUE] *= $multiplier;
             $aggregate[METRIC_INDEX_TMAX] = $period;
 
-            $emitter->send(@aggregate);
+            my $pid = fork;
+            if (!defined $pid) {
+                warn "fork failed: $!";
+                return;
+            }
+            elsif (!$pid) {
+                my %gmetric_args;
+                @gmetric_args{qw/ --type --name --value --units --slope --tmax --dmax /} = @aggregate;
+                $debug && warn "Running $gmetric @{[%gmetric_args]}\n";
+                exec $gmetric, %gmetric_args;
+                die "exec failed: $!\n";
+            }
 
             $debug && warn Data::Dumper->Dump([\@aggregate], [$metric]);
         }

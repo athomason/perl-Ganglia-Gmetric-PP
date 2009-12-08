@@ -1,5 +1,8 @@
 Revision history for Perl extension Ganglia::Gmetric::PP.
 
+1.03  Mon Dec  7 16:26:02 PST 2009
+        - Make aggregator output using gmetric(1) to workaround protocol
+          incompatibility with ganglia 3.1
 1.02  Wed Oct 14 14:29:45 PDT 2009
         - Add overall timeout to aggregator test to avoid cpan-testers reported hang
 1.01  Thu Oct  8 16:26:06 PDT 2009
