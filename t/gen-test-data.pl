@@ -17,7 +17,7 @@ for my $type (@types) {
         next unless /^write/;
         #write(3, "\0\0\0\0\0\0\0\6double\0\0\0\0\0\ndoubletest\0\0\0\0\0\003123\0\0\0\0\6things\0\0\0\0\0\3\0\0\0<\0\0\0\0", 64) = 64
         die "badness" unless /("[^"]+")/;
-        $data{$type} = [eval $1, [$type, $name, $value]];
+        push @{ $data{$type} }, [eval $1, [$type, $name, $value]];
     }
     unlink $f;
 }

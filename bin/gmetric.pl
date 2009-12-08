@@ -28,6 +28,8 @@ Usage: $me [OPTIONS]...
   -d, --dmax=INT      The lifetime in seconds of this metric  (default=`0')
   -H, --host=STRING   Host where gmond is listening  (default=`localhost')
   -p, --port=INT      UDP port where gmond is listening  (default=`8649')
+
+      --version=VER   Major version of gmetric to emulate (default=3.1)
 EOD
 
     exit 1;
@@ -37,12 +39,13 @@ GetOptions(
     'n|name=s'  => \(my $name),
     'v|value=s' => \(my $value),
     't|type=s'  => \(my $type),
-    'u|units=s' => \(my $units = ''),
-    's|slope=s' => \(my $slope = 'both'),
-    'x|tmax=i'  => \(my $tmax  = 60),
-    'd|dmax=i'  => \(my $dmax  = 0),
-    'H|host=s'  => \(my $host  = 'localhost'),
-    'p|port=i'  => \(my $port  = 8649),
+    'u|units=s' => \(my $units   = ''),
+    's|slope=s' => \(my $slope   = 'both'),
+    'x|tmax=i'  => \(my $tmax    = 60),
+    'd|dmax=i'  => \(my $dmax    = 0),
+    'H|host=s'  => \(my $host    = 'localhost'),
+    'p|port=i'  => \(my $port    = 8649),
+    'version=s' => \(my $version = '3.1'),
     'h|help!'   => \(my $help),
 );
 
@@ -69,5 +72,5 @@ usage('invalid slope')    unless exists $slopes{$slope};
 
 $slope = $slopes{$slope};
 
-my $gmetric = Ganglia::Gmetric::PP->new(host => $host, port => $port);
+my $gmetric = Ganglia::Gmetric::PP->new(host => $host, port => $port, version => $version);
 $gmetric->send($type, $name, $value, $units, $slope, $tmax, $dmax);

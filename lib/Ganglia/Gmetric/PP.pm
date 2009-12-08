@@ -19,12 +19,14 @@ with no non-core dependencies, it tries to be fast.
 
 package Ganglia::Gmetric::PP;
 
-our $VERSION = '1.02';
+our $VERSION = '1.03';
 
 use strict;
 use warnings;
 
 use base 'Exporter', 'IO::Socket::INET';
+
+use Carp 'croak';
 
 our @EXPORT_OK = qw(
     GANGLIA_VALUE_STRING
@@ -57,12 +59,16 @@ our %EXPORT_TAGS = (
 
 =over 4
 
-=item * $gmetric = Ganglia::Gmetric::PP->new(host => $host, port => $port)
+=item * $gmetric = Ganglia::Gmetric::PP->new(host => $host, port => $port, version => $version)
 
 Constructs a new object which sends gmetric packets to the specified C<host>
 and UDP C<port>. If omitted, they default to localhost and 8649, respectively.
 
-=item * $gmond = Ganglia::Gmetric::PP->new(listen_host => $host, listen_port => $port)
+C<version> determines which version of Ganglia is emulated (wire protocols may
+differ between versions). Currently legal values are '3.0' and '3.1'; the
+default is 3.1.
+
+=item * $gmond = Ganglia::Gmetric::PP->new(listen_host => $host, listen_port => $port, version => $version)
 
 Constructs a new object which receives gmetric packets (e.g. in a gmond replacement).
 If the $gmetric will be used for receiving packets, C<listen_host> and
@@ -74,7 +80,13 @@ sub new {
     my $proto = shift;
     my $class = ref($proto) || $proto;
 
-    my %p = @_;
+    my %p = (version => '3.1', @_);
+
+    my $version_class = 'Ganglia::Gmetric::PP::v' . $p{version};
+    $version_class =~ tr/./_/;
+
+    eval "require $version_class; 1"
+        or croak "ganglia version $p{version} not supported";
 
     my %opts;
 
@@ -93,7 +105,7 @@ sub new {
 
     die "failed to create socket: $!" unless $self;
 
-    return bless $self, $class;
+    return bless $self, $version_class;
 }
 
 =item * $gmetric->send($type, $name, $value, $units, $slope, $tmax, $dmax)
@@ -205,24 +217,11 @@ use constant {
 
 # internal constants
 use constant {
-    MAGIC_ID                        => 0,
-    GMETRIC_FORMAT                  => 'N(N/a*x![4])4N3',
-
     DEFAULT_UNITS                   => '',
     DEFAULT_SLOPE                   => 3,
     DEFAULT_TMAX                    => 60,
     DEFAULT_DMAX                    => 0,
 };
-
-sub send {
-    my $self = shift;
-    my @msg = (MAGIC_ID, @_);
-    $msg[4] = DEFAULT_UNITS unless defined $msg[4];
-    $msg[5] = DEFAULT_SLOPE unless defined $msg[5];
-    $msg[6] = DEFAULT_TMAX  unless defined $msg[6];
-    $msg[7] = DEFAULT_DMAX  unless defined $msg[7];
-    $self->SUPER::send(pack GMETRIC_FORMAT, @msg);
-}
 
 =item * @metric = $gmetric->receive()
 
@@ -232,9 +231,8 @@ metric (see C<parse>).
 =cut
 
 sub receive {
-    my $self = shift;
-    return() unless $self->recv(my $buf, 1 << 14);
-    return $self->parse($buf);
+    return() unless $_[0]->recv(my $buf, 1 << 14);
+    return $_[0]->parse($buf);
 }
 
 =item * @metric = Ganglia::Gmetric::PP->parse($packet_data)
@@ -248,12 +246,6 @@ The elements returned match the arguments to C<send>:
 This function may die if the given data does not resemble a gmetric packet.
 
 =cut
-
-sub parse {
-    my @res = unpack GMETRIC_FORMAT, $_[1];
-    die "bad magic" unless shift(@res) == MAGIC_ID;
-    return @res;
-}
 
 1;
 

@@ -5,6 +5,8 @@ MANIFEST.SKIP
 README
 Ganglia-Gmetric-PP.spec
 lib/Ganglia/Gmetric/PP.pm
+lib/Ganglia/Gmetric/PP/v3_0.pm
+lib/Ganglia/Gmetric/PP/v3_1.pm
 bin/gmetric-aggregator.pl
 bin/gmetric.pl
 t/Ganglia-Gmetric-PP.t
