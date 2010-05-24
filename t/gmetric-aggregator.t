@@ -34,8 +34,6 @@ for my $upgrade_types (0, 1) {
         $ENV{PERL5LIB} = join ':', @INC;
         exec
             $aggregator_bin,
-            '--remote-host'     => 'localhost',
-            '--remote-port'     => $gmond_port,
             '--listen-host'     => 'localhost',
             '--listen-port'     => $proxy_port,
             '--period'          => $aggregation_period,
