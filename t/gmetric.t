@@ -5,12 +5,11 @@ use Test::More;
 
 use Ganglia::Gmetric::PP;
 
-my $test_port = 8650;
 my $gmetric_bin = "blib/script/gmetric.pl";
 $ENV{PERL5LIB} = join ':', @INC;
 
-my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => $test_port);
-my $gmond = Ganglia::Gmetric::PP->new(listen_host => 'localhost', listen_port => $test_port);
+my $gmond = Ganglia::Gmetric::PP->new(listen_host => 'localhost', listen_port => 0);
+my $test_port = $gmond->sockport;
 
 my @types = qw/ string float double int8 uint8 int16 uint16 int32 uint32 /;
 

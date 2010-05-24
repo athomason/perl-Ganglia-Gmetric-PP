@@ -4,11 +4,6 @@ use warnings;
 use Test::More tests => 20;
 BEGIN { use_ok('Ganglia::Gmetric::PP', ':all') };
 
-my $test_port = 8650;
-
-my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => $test_port);
-ok($gmetric, 'new');
-
 # gmetric cmdline tool reference output
 my %reference = (
     "int8" => [
@@ -50,7 +45,11 @@ my %reference = (
 );
 
 # test against self
-my $gmond = Ganglia::Gmetric::PP->new(listen_host => 'localhost', listen_port => $test_port);
+my $gmond = Ganglia::Gmetric::PP->new(listen_host => 'localhost', listen_port => 0);
+my $test_port = $gmond->sockport;
+
+my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => $test_port);
+ok($gmetric, 'new');
 
 for my $type (sort keys %reference) {
     # compare reference values to deparsed gmetric output
