@@ -10,5 +10,4 @@ bin/gmetric.pl
 t/Ganglia-Gmetric-PP.t
 t/gmetric-aggregator.t
 t/gmetric.t
-t/gen-test-data.pl
 META.yml                                 Module meta-data (added by MakeMaker)
