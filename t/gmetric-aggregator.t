@@ -4,10 +4,9 @@ use warnings;
 use Test::More;
 
 use Ganglia::Gmetric::PP;
+use IO::Socket::INET;
 use Time::HiRes 'time';
 
-my $proxy_port = 8650;
-my $gmond_port = 8651;
 my $aggregator_bin = "blib/script/gmetric-aggregator.pl";
 my $aggregation_period = 5;
 
@@ -25,7 +24,19 @@ $SIG{ALRM} = sub {
 };
 alarm 20;
 
-for my $upgrade_types (0, 1) {
+for my $should_upgrade_types (0, 1) {
+
+    my $gmond = Ganglia::Gmetric::PP->new(listen_host => 'localhost', listen_port => 0);
+    my $gmond_port = $gmond->sockport;
+
+    my $listen_sock = IO::Socket::INET->new(
+        Type      => SOCK_STREAM,
+        Proto     => 'tcp',
+        Reuse     => 1,
+        Listen    => 1,
+    );
+    my $proxy_port = $listen_sock->sockport;
+    $listen_sock->close;
 
     # start proxy
     my $pid = fork;
@@ -34,11 +45,14 @@ for my $upgrade_types (0, 1) {
         $ENV{PERL5LIB} = join ':', @INC;
         exec
             $aggregator_bin,
+            '--pp-client',
+            '--remote-host'     => 'localhost',
+            '--remote-port'     => $gmond_port,
             '--listen-host'     => 'localhost',
             '--listen-port'     => $proxy_port,
             '--period'          => $aggregation_period,
             '--metric-suffix'   => '',
-            $upgrade_types ? '--floating' : '--no-floating',
+            $should_upgrade_types ? '--floating' : '--no-floating',
         ;
         die "exec failed: $!";
     }
@@ -47,7 +61,6 @@ for my $upgrade_types (0, 1) {
     sleep 1;
 
     my $gmetric = Ganglia::Gmetric::PP->new(host => 'localhost', port => $proxy_port);
-    my $gmond   = Ganglia::Gmetric::PP->new(listen_host => 'localhost', listen_port => $gmond_port);
 
     my $start_time = time;
 

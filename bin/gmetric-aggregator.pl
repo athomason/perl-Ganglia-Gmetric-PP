@@ -20,15 +20,30 @@ $me $Ganglia::Gmetric::PP::VERSION
 
 Usage: $me [OPTIONS]...
 
-      --gmetric=PATH         Path to gmetric(1) binary
+  --[no-]pp-client           Use Ganglia::Gmetric::PP for talking to gmond.
+                             Default off, which requires a working gmetric
+                             (see --gmetric below)
+
+  -h, --remote-host=STRING   Remote host where gmond is running. Default localhost
+  -p, --remote-port=INT      Remote port where gmond is running. Default 8649
+
+      --gmetric=PATH         Path to gmetric(1) binary. -h and -p options are
+                             ignored; gmetric usse its own gmond.conf for host
+                             settings.
+
   -H, --listen-host=STRING   Local interface to listen on. Default 0.0.0.0
   -P, --listen-port=INT      Local UDP port to listen on. Default 18649
   -u, --unit-suffix=STRING   Suffix to append to gmetric units. Default "/s"
   -m, --metric-suffix=STRING Suffix to append to metric names. Default "_rate"
   -n, --period=INT           Time period in seconds between aggregations. Default 60
+
   -N, --multiplier=FLOAT     Amount to multiply output values by. Default 1
-                              (e.g., use "-N 3600 -u /hour" to emit per-hour metrics).
-  -f, --[no]-floating        Always use "double" type instead of original metrics' types. Default on
+                             (e.g., use "-N 3600 -u /hour" to emit per-hour
+                             metrics).
+
+  -f, --[no]-floating        Always use "double" type instead of original metrics'
+                             types. Default on
+
   -d, --daemon               Run in daemon mode.
   -U, --user                 User to drop to (only if started as root)
   -F, --pidfile=FILE         File to write PID to in daemon mode.
@@ -40,6 +55,9 @@ EOU
 
 Getopt::Long::Configure('no_ignore_case');
 GetOptions(
+    'pp-client!'        => \(my $use_pp_client  = 0),
+    'h|remote-host=s'   => \(my $remote_host    = '127.0.0.1'),
+    'p|remote-port=i'   => \(my $remote_port    = 8649),
     'gmetric=s'         => \(my $gmetric),
     'H|listen-host=s'   => \(my $listen_host    = '0.0.0.0'),
     'P|listen-port=i'   => \(my $listen_port    = 18649),
@@ -55,12 +73,21 @@ GetOptions(
     'help!'             => \(my $help),
 ) || usage;
 
-unless ($gmetric) {
-    $gmetric = qx(which gmetric);
-    die "can't find gmetric\n" unless $gmetric;
-    chomp $gmetric;
+my $emitter;
+if ($use_pp_client) {
+    $emitter = Ganglia::Gmetric::PP->new(
+        host => $remote_host,
+        port => $remote_port,
+    );
 }
-die "can't run gmetric\n" unless -x $gmetric;
+else {
+    unless ($gmetric) {
+        $gmetric = qx(which gmetric);
+        die "can't find gmetric\n" unless $gmetric;
+        chomp $gmetric;
+    }
+    die "can't run gmetric\n" unless -x $gmetric;
+}
 
 usage if $help;
 
@@ -163,17 +190,22 @@ sub aggregator {
             $aggregate[METRIC_INDEX_VALUE] *= $multiplier;
             $aggregate[METRIC_INDEX_TMAX] = $period;
 
-            my $pid = fork;
-            if (!defined $pid) {
-                warn "fork failed: $!";
-                return;
+            if ($use_pp_client) {
+                $emitter->send(@aggregate);
             }
-            elsif (!$pid) {
-                my %gmetric_args;
-                @gmetric_args{qw/ --type --name --value --units --slope --tmax --dmax /} = @aggregate;
-                $debug && warn "Running $gmetric @{[%gmetric_args]}\n";
-                exec $gmetric, %gmetric_args;
-                die "exec failed: $!\n";
+            else {
+                my $pid = fork;
+                if (!defined $pid) {
+                    warn "fork failed: $!";
+                    return;
+                }
+                elsif (!$pid) {
+                    my %gmetric_args;
+                    @gmetric_args{qw/ --type --name --value --units --slope --tmax --dmax /} = @aggregate;
+                    $debug && warn "Running $gmetric @{[%gmetric_args]}\n";
+                    exec $gmetric, %gmetric_args;
+                    die "exec failed: $!\n";
+                }
             }
 
             $debug && warn Data::Dumper->Dump([\@aggregate], [$metric]);

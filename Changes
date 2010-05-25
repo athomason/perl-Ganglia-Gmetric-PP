@@ -1,5 +1,8 @@
 Revision history for Perl extension Ganglia::Gmetric::PP.
 
+1.04  Mon May 24 19:20:54 PDT 2010
+        - Add --pp-client option to aggregator to optionally use PP client instead of gmetric
+        - Allow OS to assign listening ports
 1.03  Mon Dec  7 16:26:02 PST 2009
         - Make aggregator output using gmetric(1) to workaround protocol
           incompatibility with ganglia 3.1
